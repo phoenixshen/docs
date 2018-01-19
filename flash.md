@@ -29,8 +29,12 @@ TAG: openwrt linux memory
 | UBOOT |    u-boot.img   | 319883|
 |FIRMWARE | openwrt-siflower-sf16a18-mpw0-squashfs-sysupgrade.bin |8650756|
 
+
  u-boot-spl.img 进行了补0，填充到了128K
  u-boot-spl.img + u-boot.img 组成了 uboot_full.img
+
+<br> <br/>
+<br> <br/>
 
  - 启动后
 
@@ -104,44 +108,62 @@ root-fs 需要小于  1800K
 
 根据重点的几个模块，列出下面优化的一些重点方向
 
-WiFi 优化
-wifi 系统整体占用空间较大，需要进行优化。
+ - WiFi 优化                       
+wifi lmac 优化                    
+wifi 总体优化                      
 
-OpenWrt系统优化
-移除不需要的网络组件，ipv6等
+- OpenWrt系统优化               
+openWrt 配置裁剪,文件裁剪          
 
-kernel优化
-移除不需要的内核模块
-重点关注一些可以减少kernel size的宏 比如CONFIG_KALLSYMS
+- kernel优化                        
+内核配置裁剪                      
+内核自研驱动优化                  
 
-LuCI 优化
-由于lua是没有经过编译的文件，如何可以减少不必要lua代码，可以有效较少系统size
+- LuCI 优化
+Luci lua文件优化， html资源裁剪
+
+- Uboot 优化
+Uboot 配置裁剪
+Uboot 自研驱动优化
 
 ###TODO
 
  - 采用什么方式定义此方案，以单独配置文件方式，还是采用单独分支。（配置文件是否可以满足需求）
+ openwrt 采用配置文件，个别软件包已单独裁剪版本发布
+ kernel 采用专门flash 优化config
+
  - 如何保证在flash过小的情况下，不会出现由于剩余空间耗尽导致系统程序无法启动。
+ 调研出现空间耗尽对系统的影响。
 
 ##优化计划
+ ```mermaid
+ gantt
+     dateFormat  YYYY-MM-DD
+     title Flash Optimize
+     section 前期准备
+         准备开发分支            :done,         2018-01-15, 1d
+         各个模块制定优化计划     :done,    a1,  2018-01-15, 2d
+         review,讨论优化目标     :done,    a2,  after a1,   1d
 
-开发时间总计18天(未包含周末时间)
+     section 第一阶段
+         第一阶段目标 ( OpenWrt系统 配置裁剪)周末  :active, a3,after a2,  5d
+         第一阶段目标 ( OpenWrt系统 文件裁剪)      :a4,after a3,  2d
+         第一阶段目标 ( kernel 部分 )  周末      :active, a5,after a2,    5d  
+         测试 第一阶段验证  周末                 :crit, after a4, 7d
 
-```mermaid
-gantt
-    dateFormat  YYYY-MM-DD
-    title Flash Optimize
-    section 前期准备
-        准备开发分支         :2018-01-15, 1d
-        各个模块制定优化计划   :a1,2018-01-15, 2d
-        review,讨论优化目标    :a2, after a1,  1d
-    section 项目实施
-        第一阶段目标 ( OpenWrt系统 )  :a3,after a2, 3d
-        第一阶段目标 ( kernel 部分 )    :a3,after a2, 3d  
-        第二阶段目标 WiFi 优化    :after a2, 5d
-        第二阶段目标 LuCI 优化    :a4, after a3, 5d
-        测试 第一阶段验证         :after a3, 3d
-        测试 第二阶段验证         :after a4, 5d
-    section 发布验收
-        准备发布(合并到master): after a4, 2d
-        发布并测试: 5d
-```
+     section 第二阶段
+         第二阶段目标 WiFi 优化  2周末           :active, after a2, 12d
+         第二阶段目标 WiFi lmac优化 2周末        :a8, 2018-01-22, 15d
+         第二阶段目标 ( uboot部分 )  周末        :a5,2018-01-22,    5d  
+         第二阶段目标 LuCI 优化 周末             :a7, after a4, 7d
+         第二阶段目标 ( kernel 部分 spi驱动)     :a6,after a5, 3d  
+         第二阶段目标 ( uboot部分 网络)  周末      :a9,2018-01-29,  5d  
+         第二阶段目标 ( uboot部分 spi)  周末      :a10, after a6,    3d  
+         第一阶段目标 ( kernel 部分 以太网驱动)     :after a7, 3d  
+
+         测试 第二阶段验证   周末                :crit, after a10, 7d
+
+     section 发布验收
+         准备发布(合并到master):                after a9, 2d
+         发布并测试:                            after a8, 5d
+ ```
