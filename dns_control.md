@@ -81,3 +81,77 @@ dns_filter->dns_filter: update list
 
 @enduml
 ```
+mmap file 中的数据结构
+主要是讲mac 和url 两个链表结构的数据进行了扁平化处理。
+
+mac list size is the mmap file size
+data used in ssst and dnsmasq
+```puml
+@startuml
+class flat_mac_list{
+<size:14> char operate_mac[6]
+//add 0 /change 1/delete2  of the mac   or init3 of the list /after process in dnsmasq
+//set none -1;
+<size:14> char operate_type
+// unsigned short
+<size:14> char node_count[2] </size>
+// each node size:  9 byte
+// all size:        9* node count
+<size:14> char* flat_mac_node_hdr_array
+//all node  data
+<size:14> char* flat_url_list array
+}
+
+class flat_mac_node_hdr{
+// only one table  will be used
+// unsigned short
+<size:14>   char len[2]
+<size:14>   char mac[6]
+<size:14>   char listtype
+}
+
+class flat_url_list{
+  //unsigned short
+<size:14> char node_count[2] </size>
+// each mode size 2
+// all size 2 * node_count
+<size:14> char* node_len_array
+  ..
+// data area
+// url node is just string
+<size:14> char *   url string
+}
+flat_mac_list *-- flat_mac_node_hdr
+flat_mac_list *-- flat_url_list
+@enduml
+```
+data saved in ssst
+```puml
+@startuml
+class mac_list{
+// unsigned short
+<size:14> char node_count[2] </size>
+// each node 11  
+//all size : 11* node count
+<size:14> struct mac_node_hdr_array
+//all data
+<size:14> char* url list array
+}
+
+class mac_node_hdr{
+// unsigned short
+<size:14>   char black_url_data_len[2]
+// unsigned short
+<size:14>   char white_url_data_len[2]
+<size:14>   char mac[6]
+<size:14>   char list_func
+}
+
+class url_list{
+<size:14> char* black_list_str </size>
+<size:14> char* white_list_str
+}
+mac_list *-- mac_node_hdr
+mac_list *-- url_list
+@enduml
+```
