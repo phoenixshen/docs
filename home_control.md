@@ -221,8 +221,7 @@ param:  version
         mac
 body:
       {
-          "urllist"：[ "url1", "url2", .. ] // input url here  
-          "urllist_en"：[ "url1", "url2", .. ] // input url here  
+          "urllist"：[ "url1", "url2", .. ] // input url here   just for save
       }
 
 return:
@@ -257,6 +256,12 @@ return:
 param:  version
         listfunc// 0 no use 1 使用白名单 2 使能黑名单
         mac // 设备mac地址
+
+body:
+      {
+          "urllist_en"：[ "url1", "url2", .. ] // input url here, for enable  
+      }
+
 return:
       {
         “code”: 0,//返回码
