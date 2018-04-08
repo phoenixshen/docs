@@ -49,19 +49,19 @@
           {
             "timelist"：[
               {
-                "enable": "[0/1]", //时间段是否禁止访问
+                "enable": [0/1], //时间段是否禁止访问
                 "starttime": "xx:xx",
                 "endtime": "xx:xx"
                 "week":"1,2,3,4,5,6,7"
-                "config":"1"
+                "config":1
               },
 
               {
-                "enable": "1", //时间段是否禁止访问
+                "enable": 1, //时间段是否禁止访问
                 "starttime": "xx:xx",
                 "endtime": "xx:xx"
                 "week":"1,2,3,4,5,6,7"
-                "config":"0"
+                "config":0
               },
             ... //多个时间段
             ]  
@@ -114,7 +114,7 @@ return:
                 "starttime": "xx:xx",
                 "endtime": "xx:xx"
                 "week":"1,7"
-                "config": "1"
+                "config":1
               },
             ... //多个时间段
             ],
@@ -165,7 +165,7 @@ return:
                 "enable": [1/0], //时间段是否禁止访问
                 "starttime": "xx:xx",
                 "endtime": "xx:xx"
-                "config": "1"
+                "config": 1
               },
             ... //多个时间段
             ],

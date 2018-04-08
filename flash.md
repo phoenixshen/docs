@@ -82,7 +82,6 @@ TAG: openwrt linux memory
 | --------   | -----:  |
 | UBOOT SPL| 32K|  
 | UBOOT        |   164K    |
-| UBOOT ENV |    4K    |
 | FACTORY|    4K   |
 |SYSTEM|   3896K|
 |SUM|   4096K|

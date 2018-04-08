@@ -1,0 +1,8 @@
+scp phoenix@192.168.1.10:/home/phoenix/codebase/p10/chaos_calmer_15_05_1/package/siflower/luci-siflower/modules/luci-mod-admin-full/luasrc/controller/api/sfsystem.lua /usr/lib/lua/luci/controller/api/sfsystem.lua
+
+
+scp phoenix@192.168.1.10:/home/phoenix/codebase/p10/chaos_calmer_15_05_1/build_dir/target-mipsel_mips-interAptiv_uClibc-0.9.33.2/dnsmasq-nodhcpv6/dnsmasq-2.73/src/dnsmasq /usr/sbin/dnsmasq
+
+
+scp phoenix@192.168.1.10:~/codebase/p10/chaos_calmer_15_05_1/b
+uild_dir/target-mipsel_mips-interAptiv_uClibc-0.9.33.2/ssst/ssst /usr/sbin/ssst
