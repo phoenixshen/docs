@@ -1,7 +1,11 @@
 
 # NPU驱动文档
 
+TODO:
+## api 特有接口介绍(对应驱动特别功能) (注：special func)
+
 本篇文档对于NPU硬件进行简单的介绍，着重对于软件功能和设计进行描述。
+
 
 ## 硬件功能介绍
 
@@ -80,7 +84,7 @@ mac entry operation ：
 | SFAX8_SWITCH_FPGA      | n    | FPGA调试支持            |
 | SFAX8_SWITCH_VLAN      | y    | 决定是否划分VLAN        |
 | SFAX8_SWITCH_API       | n    | NPU特殊功能接口支持     |
-| SFAX8_SWITCH_POWERSAVE | n    | PHY的睡眠模式优化功耗   |
+| SFAX8_SWITCH_POWERSAVE | n    | PHY的睡眠模![stop_flow](/assets/stop_flow.png)式优化功耗   |
 | SFAX8_SWITCH_AGEING    | y    | 软件对MAC地址存储的支持 |
 | SF_TX_SHUTDOWN         | y    | 配置端口优化功耗        |
 
@@ -90,44 +94,82 @@ mac entry operation ：
 
 ### 平台驱动流程
 
+<br> <br/>
 - 打开设备流程
 ![open_flow](/assets/open_flow.png)
+系统打开网络设备时，驱动对于硬件进行初始化，随后将vlan相关配置完成，进行dma设置后，启动系统的收发数据流程，最后代开监控硬件状态线程，完成整个设备启动的工作。
+<br> <br/>
+- 关闭设备流程
+![stop_flow](/assets/stop_flow_5n5x185ai.png)
+关闭设备时，要等待npu内部缓存数据处理结束，所以要按照停止系统发送，停止硬件接收，等到缓存数据处理完成后，在关闭硬件发送和软件接收。
 
-       关闭设备流程
 
-       发送数据
-            数据结构
-            硬件处理方法
+<br> <br/>
+- 交互数据结构
+    硬件通过读取Buffer descripter 的信息，使用dma搬运数据。
+    ![image014](/assets/image014.png)
+    软件填写BD相应的数据结构，其中buffer address 是实际数据所在的物理地址。BD CTRL 中的标志位用来把表示当前BD的状态和硬件如何处理数据。
+    ![image017](/assets/image017.png)
+    注意：BD的地址需要进行8字节对齐。
+    在BD之外，硬件还需要添加一下信息又来进行mac地址学习相关的操作，会在软件报文的头部，添加一个tx/rx header。
+    ![image020](/assets/image020.png)
+    ![image022](/assets/image022.png)
+    tx/rx header中会包含一些额外信息。
+    ![image026](/assets/image026.png)
+    其中，tx header可以用来实现inject 报文功能，指定报文发送到那个端口，rx header中可以获得报文从哪个端口接收到的，是否为punt packet需要驱动处理等信息。
 
-       接受数据
-            数据结构
-            硬件处理方法
+<br> <br/>
+- 发送数据流程    
+<br> <br/>
+![tx_flow](/assets/tx_flow.png)
+<br> <br/>
+- 接受数据流程
+<br> <br/>
+![rx_flow](/assets/rx_flow.png)
+<br> <br/>
+为了提高数据处理效率，使用了系统结合中断和polling两种方式napi方式接收数据，当收到punt报文时，需要进行mac地址学习操作。
 
-       中断处理
+<br> <br/>
+- 中断处理介绍
+tx/rx 会分别处罚tx napi poll, 和rx napi napi poll,
+tx napi poll 会关闭tx 中断，free 掉已经发送完成的tx pkt 的内存后，重新时能中断并退出poll线程。
+rx napi poll 线程, 关闭rx 中断，处理所有接收的rx pkt，处理完成后，重新使能rx中断，并且退出poll线程。
+<br> <br/>
+- mac地址学习介绍
+mac 地址会有learn relearn ageing三种处理，根据punt报文类型的不行，对于mac table 进行add update delete等操作，驱动需要定期进行mac地址ageing，删除很久没有使用的mac地址，当系统存储的mac地址数量接近上限1024时，直接不等待计时器到时，直接触发ageing。
 
-## Phy link 机制介绍
 
-## Switch 机制介绍
+## 特殊机制介绍
 
-## 功耗优化方案介绍
+### Switch 机制介绍
+**目的**    
+硬件根据mac table 和 vlan table 进行报文的switch，软件需要进行配置
 
+**实现**    
+初始化过程中，软件需要配置每个端口的default vlan id，从各个端口进入的数据包，如果没有vlan tag，会根据vlan id被硬件自动打上vlan tag。
+软件根据系统配置划分好vlan网络，比如vlan1 有0-3 以及5号 5个端口用作lan， vlan2 划分4号5号端口，用作wan。
+当有需要学习的报文进入系统，驱动根据vlan 以及 mac地址信息，添加mac table entry，这样硬件可以根据这个entry进行switch。
+当已经学习过的mac 地址从另外一个端口出现，驱动需要对于已有mac entry进行更新。
+
+### 功耗优化方案介绍
+
+**目的**    
     为了节约NPU工作时的功耗，在phy不工作时，每一个PHY进入低功耗模式节约20mA电流    
 
-    在检测到PHY没有link状态时，将PHY设置为10M半双工，TX模式设置为idle模式。
+**实现**    
+    系统启动时检测到PHY没有link状态时，将PHY设置为10M半双工，TX模式设置为idle模式。
+    如果检测到某个phy接口有能量出现，就将phy切换到正常模式。
+    如果检测到某个phy 断开了连接，就将phy切换到低功耗模式。
+    由于我们是Router，为了防止PC网卡进入休眠模式后，导致双方同时休眠无法互相唤醒，我们会每1s，将phy wake 5ms，发送信号，保证对方网卡休眠也可以进行唤醒。
 
-    由于我们是Router，为了防止PC网卡进入休眠模式后，导致双方同事休眠无法互相唤醒，我们会每1s，将phy wake 5ms，发送信号，保证对方网卡休眠也可以进行唤醒。
+## Recovery机制介绍
 
-    检测到phy 上面有energy，此时将phy 切换到正常工作模式，建立link，正常通讯。
+**目的**：为避免驱动遭遇意外情况而出现不可恢复的错误，我们增加了一个recovery保障机制。
 
-## Recovery机制介绍 (注：reset线程介绍)
+**实现**：驱动启动一个reset 线程，循环检测NPU内部buffer使用情况，在检测到内部buffer耗尽且数据处理单元描述符TX/RX/Free index不在发生变化，也就是tx rx 数据不再进行收发，这种情况下系统内部buffer也不进行释放，表明硬件已经出现问hang住，这个时候触发我们的recovery机制。
+recovery操作是一个平滑的用户无法感知的操作，耗时约100ms，会将目前驱动中缓存的数据记录，暂时中断系统收发，在对对NPU软硬件重新进行配置完成后在原有基础上继续进行传输，保证尽可能少的丢失数据。
+目前此问题会在10m 半双工情况下，不断拔插网线的时候偶现。
 
-**说明**：为避免驱动遭遇意外情况而出现不可恢复的错误，我们增加了一个recovery保障机制。
-
-**方法**：另起线程，循环检测NPU内部buffer使用情况，在检测到内部buffer耗尽且数据处理单元描述符TX/RX/Free index不走的情况下触发我们的recovery机制。
-
-**特征**：recovery操作是一个平滑的用户无法感知的操作，耗时约100ms，它会记录当前index，并对NPU软硬件重新进行配置，配置完成后会从之前位置重新读取处理数据。
-
-## api 特有接口介绍(对应驱动特别功能) (注：special func)
 
 
 ## DebugFS (注：各debug接口)

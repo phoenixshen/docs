@@ -1,6 +1,4 @@
-﻿# SIWIFI本地接口文档
-
-
+ # SIWIFI本地接口文档
 
 ---
 
@@ -48,7 +46,7 @@ http post形式的操作接口将参数放在http请求的包体里面。
 
 ### 1 路由器管理
 #### 1.1 路由器绑定
-功能：app通过局域网绑定路由器
+功能：app通过局域网绑定路由器,用户为管理员
 方式：APP + 路由器以http post的形式提交操作
 接口：/api/sfsystem/bind
 说明：该接口适用于未绑定的路由器，绑定的同时路由器会触发建表的动作。
@@ -57,7 +55,8 @@ e.g.：
   body:
         {
           “version”(必选)://代表当前app请求的协议版本
-          “userobjectid”(必选)://代表当前需要绑定的user的objectid，作为唯一标示
+          “userobjectid”(可选)://代表当前需要绑定的user的objectid，作为唯一标示
+          “deviceid"(可选)://代表当前需要绑定的user的deviceid，作为唯一标示
         }
   return:
         {
@@ -77,7 +76,8 @@ e.g.：
   body:
         {
           “version”(必选)://代表当前app请求的协议版本
-          “userobjectid”(必选)://代表当前需要绑定的user的objectid，作为唯一标示
+          “userobjectid”(可选)://代表当前需要绑定的user的objectid，作为唯一标示
+          “deviceid”(可选)://代表当前需要绑定的user的deviceid，作为唯一标示
         }
   return:
         {
@@ -123,6 +123,47 @@ e.g.：
         }
 </code></pre>
 
+#### 1.4 路由器绑定普通用户
+功能：app通过局域网绑定路由器,用户为普通用户
+方式：APP + 路由器以http post的形式提交操作
+接口：/api/sfsystem/adduser
+说明：该接口适用于未绑定的路由器，绑定的同时路由器会触发建表的动作。
+e.g.：
+<pre><code>
+  body:
+        {
+          “version”(必选)://代表当前app请求的协议版本
+          “userobjectid”(可选)://代表当前需要绑定的user的objectid，作为唯一标示
+          “deviceid"(可选)://代表当前需要绑定的user的deviceid，作为唯一标示
+          “rootmessage"(可选)://代表当前绑定操作是否需要通知管理员
+        }
+  return:
+        {
+          “code”: 0,//返回码
+          “routerobjectid: “df78361fh2”,//返回路由器的bmob objectid
+          “msg”: “error message”//返回码不为0时会有错误信息返回
+        }
+</code></pre>
+
+#### 1.5 普通用户获取访问权限
+功能：app通过wifi密码获取路由器普通用户权限
+方式：APP + 路由器以http post的形式提交操作
+接口：/api/sfsystem/getaccess
+说明：该接口用于普通用户获取访问权限
+e.g.：
+<pre><code>
+  body:
+        {
+          “version”(必选)://代表当前app请求的协议版本
+          “data"(必选)://代表加密过后的pattern和wifi密码数据
+        }
+  return:
+        {
+          “code”: 0,//返回码
+          “access": “*****”,//返回路由器的访问权限pattern
+          “msg”: “error message”//返回码不为0时会有错误信息返回
+        }
+</code></pre>
 ### 2. 管理连接设备
 #### 2.1 获取设备列表
 功能：获取路由器上所有连接设备信息，包括在线、离线
@@ -155,6 +196,8 @@ return:
             "port": 0,//设备连接类型，1为有线,0为无线
             "dev": "wlan0",//连接路由器网络端口名称
             "count"://MB 为单位， 返回剩余可用流量 -1 没有限制
+            "restrictenable"://是否使能 访问类型限制
+            "usageenable"://是否使能访问流量限制
 
             "authority": { //设备权限相关信息
               "internet": 0,//互联网访问模式 0禁止 1允许 2限时模式
@@ -381,6 +424,7 @@ e.g.：
           “social”(必选)://0表示允许，1表示禁止
           “video”(必选)://0表示允许，1表示禁止
           “game”(必选)://0表示允许，1表示禁止
+          "restrictenable"(必选)：//是否启动此功能
         }
   return:
         {
@@ -389,7 +433,30 @@ e.g.：
         }
 </code></pre>
 
-#### 2.8 设置设备上网流量信息
+#### 2.8 获取设备上网行为控制设置
+功能：获取设置设备默认上网行为，限制社交/视频/游戏设置
+方式：APP + 路由器以http post的形式提交操作
+接口：/api/sfsystem/getdevicerestrict
+e.g.：
+<pre><code>
+  body:
+        {
+            “version”(必选)://代表当前app请求的协议版本
+            "mac"(必选)://设备mac地址
+    }
+  return:
+        {
+            “social”(必选)://0表示允许，1表示禁止
+            “video”(必选)://0表示允许，1表示禁止
+            “game”(必选)://0表示允许，1表示禁止
+            "restrictenable"(必选)：//是否启动此功能
+
+            “code”: 0,//返回码
+            “msg”: “error message”//返回码不为0时会有错误信息返回
+        }
+</code></pre>
+
+#### 2.9 设置设备上网流量信息
 功能：设置设备上网流量，可以已一次性或者周期方式配置流量, 需要支持多条设置
 方式：APP + 路由器以http post的形式提交操作
 接口：/api/sfsystem/setdevicedatausage
@@ -407,6 +474,7 @@ e.g.：
               ...
               ]
              "change"(必选):// 以MB为单位 设备可以使用流量,可以是赋值     
+             "usageenable"://是否使能
            }
   return:
         {
@@ -415,7 +483,7 @@ e.g.：
         }
 </code></pre>
 
-#### 2.9 获取设备上网流量信息
+#### 2.10 获取设备上网流量信息
 功能： 返回设备流量配置
 方式：APP + 路由器以http post的形式提交操作
 接口：/api/sfsystem/getdevicedatausage
@@ -429,7 +497,7 @@ e.g.：
   return:
         {
           “code”: 0,//返回码
-           setlist:[ {
+           "setlist":[ {
               “count"(必选)://以MB为单位 设备可以使用流量,可以是赋值
               “type”(必选)://1表示一次性流量，2表示周期流量 0 表示关闭此功能
               "week"(可选):"1,7":// 周期
@@ -437,6 +505,8 @@ e.g.：
               ...
               ]
            }
+          "credit":// 当天剩余流量
+          "usageenable"://是否使能
           “msg”: “error message”//返回码不为0时会有错误信息返回
         }
 </code></pre>
@@ -624,7 +694,7 @@ e.g.：
                                 1——40MHz                1——40MHz
                                 2——20/40MHz             3——80MHz
 
-          “$(ssid).country-code”://国家码 list_value:CN,00,AD,AE,AF,AG,AI,AL,AM,AN...
+          “$(ssid).country”://国家码 list_value:CN,00,AD,AE,AF,AG,AI,AL,AM,AN...
           }
           ]，
         }
@@ -1011,6 +1081,7 @@ e.g.：
                   "starttime": "xx:xx",// 开机时间
                   "endtime": "xx:xx", //关机时间
                   "week":"1,7"//循环周期
+                  "enable":0 // 1开启或者0关闭
               }
           ]
         }
@@ -1021,7 +1092,32 @@ e.g.：
          }
 </code></pre>
 
-#### 6.8 路由器关闭硬件恢复出厂设置
+#### 6.8 获取路由器定时开关机设置
+功能： 获取路由器定时开关机时间设置
+方式：APP + 路由器以http post的形式提交操作
+接口：/api/sfsystem/getrouterlivetime
+说明： 本接口获取定时开关机设置
+e.g.：
+<pre><code>
+  body:
+        {
+            “version”(必选)://代表当前app请求的协议版本
+        }
+  return:
+         {
+              “code”: 0,//返回码
+              “msg”: “error message”//返回码不为0时会有错误信息返回
+              "timelist"：[
+                  {
+                      "starttime": "xx:xx",// 开机时间
+                      "endtime": "xx:xx", //关机时间
+                      "week":"1,7"//循环周期
+                      "enable":0 // 1开启或者0关闭
+                  }
+              ]
+         }
+</code></pre>
+#### 6.9 路由器关闭硬件恢复出厂设置
 功能： 设置路由器关闭硬件恢复出厂设置
 方式：APP + 路由器以http post的形式提交操作
 接口：/api/sfsystem/blockrefactory
@@ -1036,6 +1132,23 @@ e.g.：
          {
               “code”: 0,//返回码
               “msg”: “error message”//返回码不为0时会有错误信息返回
+         }
+</code></pre>
+#### 6.10 获取路由器关闭硬件恢复出厂设置
+功能： 获取路由器关闭硬件恢复出厂设置
+方式：APP + 路由器以http post的形式提交操作
+接口：/api/sfsystem/getblockrefactory
+说明：
+e.g.：
+<pre><code>
+  body:
+        {
+          “version”(必选)://代表当前app请求的协议版本
+  return:
+         {
+              “code”: 0,//返回码
+              “msg”: “error message”//返回码不为0时会有错误信息返回
+              "block"：// 0 不阻止硬件恢复出厂设置 1 阻止硬件恢复出厂设置       }
          }
 </code></pre>
 ### 7. 家长管控

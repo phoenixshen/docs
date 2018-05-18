@@ -1,4 +1,6 @@
-﻿# SIWIFI 服务
+
+# SIWIFI 服务
+
 
 ---
 
@@ -97,7 +99,7 @@ subcloud 会一直维护与服务器的连接，根据定期的时钟滴答进�
 
 ```
  /*aclscript 为接入控制脚本*/
- 0 20 * * * aclscript c_net $mac 0 
+ 0 20 * * * aclscript c_net $mac 0
  0 7 * * * aclscript c_net $mac 1
  ipset create forwardvar hash:mac
  iptables -I forwarding_rule -m set --match-set forwardvar src -j DROP
@@ -121,7 +123,7 @@ pctl是上网时间控制和设备限速的配置脚本。使用方式如下：
 
 
 ```
-#mac format AA:BB:CC:DD:EE:FF //mac 地址为大写 
+#mac format AA:BB:CC:DD:EE:FF //mac 地址为大写
 #param:
 pctl time $action(add/del/update/acl) $mac time $starttime $stoptime $week time $starttime $stoptime $week...... //支持多个时间段一起设置
 pctl speed $action(add/del/update) $mac $upspeed $downspeed

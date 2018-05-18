@@ -7,14 +7,39 @@ TAG: openwrt linux memory
 
 ##Open Issue
 
-如何保证在flash过小的情况下，不会出现由于剩余空间耗尽导致系统程序无法启动。
+- 如何保证在flash过小的情况下，不会出现由于剩余空间耗尽导致系统程序无法启动。
 调研出现空间耗尽对系统的影响。
 
-如何保证和正常版本镜像在烧录出错的情况下，uboot仍然可以正常启动
+- 如何保证和正常版本镜像在烧录出错的情况下，uboot仍然可以正常启动
 
+- 集成PCBA测试工具
+- 集成wifi ATE 测试工具
+- 发布合入网页OTA升级（简化）功能版本
 
 ##flash优化方案介绍
 
+###原flash使用情况
+- 分区划分
+
+| 分区名        | 大小   |
+| --------   | -----:  |
+| UBOOT SPL| 128K|  
+| UBOOT        |   384K   |
+| UBOOT ENV |    64K   |
+| FACTORY|    64K   |
+|SYSTEM|   15744K|
+|SUM|   16384K|
+
+- 镜像大小
+
+| 分区       | 镜像| 大小   |
+| --------   | ------- |-----:  |
+| UBOOT SPL| u-boot-spl.img|  62K|
+| UBOOT |    u-boot.img   | 319K|
+|FIRMWARE | openwrt-siflower-sf16a18-mpw0-squashfs-sysupgrade.bin |8650K|
+
+
+###优化后flash使用情况
  - 分区划分
 
 | 分区名        | 大小   |
@@ -32,7 +57,12 @@ TAG: openwrt linux memory
 | --------   | ------- |-----:  |
 | UBOOT SPL| u-boot-spl.img|  32K|
 | UBOOT |    u-boot.img   | 164K|
-|FIRMWARE | openwrt-siflower-sf16a18-mpw0-squashfs-sysupgrade.bin |3000K|      
+|FIRMWARE | openwrt-siflower-sf16a18-mpw0-squashfs-sysupgrade.bin |3329K|      
+
+系统启动后，仍有800K左右的free space 可以使用。
+
+Uboot spl uboot 以及组成系统的kernel 和openwrt rootfs 文件系统都进行了优化，整体占用空间
+只有之前总体大小的的39%。
 
 ##编译及使用
 
